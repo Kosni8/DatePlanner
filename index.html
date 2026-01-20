@@ -9,28 +9,30 @@
     </head>
 
     <body>
-        <h1>Date Planner App</h1>
+        <div class="app">
 
-        <h3>Date-Idee Hinzufügen</h3>
-        <form id="addDateForm">
-            <label for="TitelInput">Titel: </label>
-            <input type="text" id="TitelInput" placeholder="Date-Idee eingeben" required>
+            <header class="header">
+                <h1>Date Planner</h1>
+            </header>
 
-            <label for="sizeSelect">Größe:</label>
-            <select name="sizeSelect" id="sizeSelect" required>
-                <option value="klein" selected>klein</option>
-                <option value="mittel">mittel</option>
-                <option value="groß">groß</option>
-            </select>
+            <main>
+                <ul id="DateList" class="date-list"></ul>
+            </main>
 
-            <button id="submitButton" type="submit">Hinzufügen</button>
-        </form>
+            <form id="addDateForm" class="addDate-form">
+                <input type="text" id="TitleInput" placeholder="Date-Idee eingeben" required>
 
-        <h3>Liste von Date-Ideen</h3>
-        <ul id="DateList">
-        </ul>
+                <!-- <label for="sizeSelect">Größe:</label>
+                <select name="sizeSelect" id="sizeSelect" required>
+                    <option value="klein" selected>klein</option>
+                    <option value="mittel">mittel</option>
+                    <option value="groß">groß</option>
+                </select> -->
 
+                <button id="submitButton" type="submit">+</button>
+            </form>
+
+        </div>
         <script src="app.js"></script>
     </body>
-
 </html>

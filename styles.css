@@ -1,39 +1,60 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
-font-family: system-ui, sans-serif;
-padding: 16px;
-max-width: 480px;
-margin: auto;
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background-color: #f5f5f5;
 }
 
-h1 {
-text-align: center;
+.app {
+    max-width: 480px;
+    margin: auto;
+    min-height: 100vh;
+    padding-bottom: 80px;
 }
 
-h3 {
-text-align: center;
+.header {
+    background: white;
+    padding: 16px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
 }
 
-form {
-display: flex;
-gap: 8px;
-margin-bottom: 16px;
+.date-list {
+    padding: 16px;
 }
 
-input {
-flex: 1;
-padding: 10px;
-font-size: 16px;
+.date-list li {
+    background: white;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    font-size: 16px;
 }
 
-button {
-padding: 10px 14px;
-font-size: 16px;
+.addDate-form {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 480px;
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    background: white;
+    border-top: 1px solid #ddd;
 }
 
-li {
-list-style: none;
-padding: 10px;
-border: 1px solid #ddd;
-margin-bottom: 8px;
+.addDate-form input {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
 }
 
+.addDate-form button {
+    padding: 12px 16px;
+    font-size: 22px;
+}

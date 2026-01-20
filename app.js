@@ -15,19 +15,24 @@ function renderDates() {
     dateList.innerHTML = '';
     dates.forEach(date => {
         const li = document.createElement('li');
-        li.textContent = `Name: ${date.title} Größe: ${date.size}`;
+        li.textContent = `${date.title}`;
         dateList.appendChild(li);
     });
 }
 
 document.getElementById('addDateForm').addEventListener('submit', function(event) {
     event.preventDefault();
-    const title = document.getElementById('TitelInput').value;
-    const size = document.getElementById('sizeSelect').value;
-    dates.push({ title, size });
+    const input = document.getElementById('TitleInput');
+    const newDate = {
+        id: Date.now(),
+        title: input.value,
+    };
+
+    dates.push(newDate);
     saveDates();
     renderDates();
-    this.reset();
+    input.value = '';
+    input.blur();
 });
 
 // Initial load
