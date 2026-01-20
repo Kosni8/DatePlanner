@@ -1,1 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
 
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="styles.css">
+        <title>Date Planner</title>
+    </head>
+
+    <body>
+        <h1>Date Planner App</h1>
+
+        <h3>Date-Idee Hinzufügen</h3>
+        <form id="addDateForm">
+            <label for="TitelInput">Titel: </label>
+            <input type="text" id="TitelInput" placeholder="Date-Idee eingeben" required>
+
+            <label for="sizeSelect">Größe:</label>
+            <select name="sizeSelect" id="sizeSelect" required>
+                <option value="klein" selected>klein</option>
+                <option value="mittel">mittel</option>
+                <option value="groß">groß</option>
+            </select>
+
+            <button id="submitButton" type="submit">Hinzufügen</button>
+        </form>
+
+        <h3>Liste von Date-Ideen</h3>
+        <ul id="DateList">
+        </ul>
+
+        <script src="app.js"></script>
+    </body>
+
+</html>
