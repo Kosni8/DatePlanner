@@ -25,7 +25,9 @@ function renderDates() {
     dateList.innerHTML = '';
     dates.forEach(date => {
         const li = document.createElement('li');
-        li.textContent = `${date.title}`;
+
+        const title = document.createElement('span');
+        title.textContent = `${date.title}`;
 
         const del = document.createElement('button');
         del.textContent = 'X';
@@ -35,6 +37,7 @@ function renderDates() {
             renderDates();
         });
 
+        li.appendChild(title);
         li.appendChild(del);
         dateList.appendChild(li);
     });
