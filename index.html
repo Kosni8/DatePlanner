@@ -19,6 +19,12 @@
             <h1>Date Planner</h1>
         </header>
 
+        <div class="filter">
+            <button id="filterAll">Alle</button>
+            <button id="filterSmall">Klein</button>
+            <button id="filterBig">Groß</button>
+        </div>
+
         <main>
             <ul id="DateList" class="date-list"></ul>
         </main>
@@ -26,12 +32,22 @@
         <form id="addDateForm" class="addDate-form">
             <input type="text" id="TitleInput" placeholder="Date-Idee eingeben" required>
 
-            <!-- <label for="sizeSelect">Größe:</label>
-                <select name="sizeSelect" id="sizeSelect" required>
-                    <option value="klein" selected>klein</option>
-                    <option value="mittel">mittel</option>
-                    <option value="groß">groß</option>
-                </select> -->
+            <div class="form-row">
+                <label>
+                    <input type="radio" name="size" value="klein" checked/>
+                    Klein
+                </label>
+                <label>
+                    <input type="radio" name="size" value="groß" />
+                    Groß
+                </label>    
+            </div>
+
+            <label class="form-row">
+                <input type="checkbox" id="bookingCheckbox">
+                Buchen nötig
+            </label>
+
 
             <button id="submitButton" type="submit">+</button>
         </form>
