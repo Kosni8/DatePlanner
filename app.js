@@ -1,113 +1,231 @@
 
+// const APP_VERSION = 1;
+
+// let dates = [];
+
+// let filter = 'all';
+// const toggleBtn = document.getElementById('toggleDetails');
+// const details = document.getElementById('details');
+
+
+
+// function loadDates() {
+
+//     const storedVersion = localStorage.getItem("appVersion");
+
+//     if (storedVersion != APP_VERSION) {
+//         localStorage.removeItem("dates");
+//         localStorage.setItem("appVersion", APP_VERSION);
+//     }
+
+//     const storedDates = localStorage.getItem('dates');
+//     dates = storedDates ? JSON.parse(storedDates) : [];
+// }
+
+// function saveDates() {
+//     localStorage.setItem('dates', JSON.stringify(dates));
+// }
+
+// function renderDates() {
+//     const dateList = document.getElementById('DateList');
+//     dateList.innerHTML = '';
+
+//     const filtered = dates.filter(d =>
+//         filter === 'all' ? true : d.size === filter
+//     );
+
+//     if (filtered.length === 0) {
+//         dateList.innerHTML = '<li>Keine Dates vorhanden</li>';
+//         return;
+//     }
+
+//     filtered.forEach(date => {
+//         const li = document.createElement('li');
+
+//         const left = document.createElement('div')
+//         const title = document.createElement('div');
+//         title.textContent = date.title;
+
+//         const meta = document.createElement('div');
+//         meta.className = 'meta';
+//         meta.textContent = `${date.size} • ${date.booking ? "Buchen" : "Kein Buchen"}`;
+
+//         left.appendChild(title);
+//         left.appendChild(meta);
+
+//         const del = document.createElement('button');
+//         del.textContent = 'X';
+//         del.addEventListener('click', () => {
+//             dates = dates.filter(d => d.id !== date.id);
+//             saveDates();
+//             renderDates();
+//         });
+
+//         li.appendChild(left);
+//         li.appendChild(del);
+//         dateList.appendChild(li);
+//     });
+// }
+
+// document.getElementById('filterAll').onclick = () => {
+//     filter = 'all';
+//     renderDates();
+// }
+
+
+// document.getElementById('filterSmall').onclick = () => {
+//     filter = 'klein';
+//     renderDates();
+// }
+
+// document.getElementById('filterBig').onclick = () => {
+//     filter = 'groß';
+//     renderDates();
+// }
+
+// toggleBtn.addEventListener('click', () => {
+//     details.classList.toggle('hidden');
+// });
+
+
+// document.getElementById('addDateForm').addEventListener('submit', function (event) {
+//     event.preventDefault();
+//     const input = document.getElementById('TitleInput');
+
+//     const newDate = {
+//         id: Date.now(),
+//         title: input.value,
+//         size: document.querySelector('input[name="size"]:checked').value,
+//         booking: document.getElementById('bookingCheckbox').checked
+//     };
+
+//     dates.push(newDate);
+//     saveDates();
+//     renderDates();
+//     input.value = '';
+//     input.blur();
+//     details.classList.add('hidden');
+
+// });
+
+// // Initial load
+// loadDates();
+// renderDates();
+
+
+
 const APP_VERSION = 1;
 
 let dates = [];
-
-let filter = 'all';
-const toggleBtn = document.getElementById('toggleDetails');
-const details = document.getElementById('details');
-
-
+let filter = "all";
 
 function loadDates() {
+  const storedVersion = localStorage.getItem("appVersion");
 
-    const storedVersion = localStorage.getItem("appVersion");
+  if (storedVersion != APP_VERSION) {
+    localStorage.removeItem("dates");
+    localStorage.setItem("appVersion", APP_VERSION);
+  }
 
-    if (storedVersion != APP_VERSION) {
-        localStorage.removeItem("dates");
-        localStorage.setItem("appVersion", APP_VERSION);
-    }
-
-    const storedDates = localStorage.getItem('dates');
-    dates = storedDates ? JSON.parse(storedDates) : [];
+  const storedDates = localStorage.getItem("dates");
+  dates = storedDates ? JSON.parse(storedDates) : [];
 }
 
 function saveDates() {
-    localStorage.setItem('dates', JSON.stringify(dates));
+  localStorage.setItem("dates", JSON.stringify(dates));
 }
 
 function renderDates() {
-    const dateList = document.getElementById('DateList');
-    dateList.innerHTML = '';
+  const dateList = document.getElementById("DateList");
+  dateList.innerHTML = "";
 
-    const filtered = dates.filter(d =>
-        filter === 'all' ? true : d.size === filter
-    );
+  const filtered = dates.filter(d =>
+    filter === "all" ? true : d.size === filter
+  );
 
-    if (filtered.length === 0) {
-        dateList.innerHTML = '<li>Keine Dates vorhanden</li>';
-        return;
-    }
+  if (filtered.length === 0) {
+    dateList.innerHTML = "<li>Keine Dates vorhanden</li>";
+    return;
+  }
 
-    filtered.forEach(date => {
-        const li = document.createElement('li');
+  filtered.forEach(date => {
+    const li = document.createElement("li");
 
-        const left = document.createElement('div')
-        const title = document.createElement('div');
-        title.textContent = date.title;
+    const left = document.createElement("div");
 
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        meta.textContent = `${date.size} • ${date.booking ? "Buchen" : "Kein Buchen"}`;
+    const title = document.createElement("div");
+    title.textContent = date.title;
 
-        left.appendChild(title);
-        left.appendChild(meta);
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = `${date.size} • ${date.booking ? "Buchen" : "Kein Buchen"}`;
 
-        const del = document.createElement('button');
-        del.textContent = 'X';
-        del.addEventListener('click', () => {
-            dates = dates.filter(d => d.id !== date.id);
-            saveDates();
-            renderDates();
-        });
+    left.appendChild(title);
+    left.appendChild(meta);
 
-        li.appendChild(left);
-        li.appendChild(del);
-        dateList.appendChild(li);
-    });
+    const del = document.createElement("button");
+    del.textContent = "X";
+    del.onclick = () => {
+      dates = dates.filter(d => d.id !== date.id);
+      saveDates();
+      renderDates();
+    };
+
+    li.appendChild(left);
+    li.appendChild(del);
+    dateList.appendChild(li);
+  });
 }
 
-document.getElementById('filterAll').onclick = () => {
-    filter = 'all';
+function init() {
+  // Filter
+  document.getElementById("filterAll").onclick = () => {
+    filter = "all";
     renderDates();
-}
+  };
 
-
-document.getElementById('filterSmall').onclick = () => {
-    filter = 'klein';
+  document.getElementById("filterSmall").onclick = () => {
+    filter = "klein";
     renderDates();
-}
+  };
 
-document.getElementById('filterBig').onclick = () => {
-    filter = 'groß';
+  document.getElementById("filterBig").onclick = () => {
+    filter = "groß";
     renderDates();
-}
+  };
 
-toggleBtn.addEventListener('click', () => {
-    details.classList.toggle('hidden');
-});
+  // Toggle Details
+  const toggleBtn = document.getElementById("toggleDetails");
+  const details = document.getElementById("details");
 
+  toggleBtn.addEventListener("click", () => {
+    details.classList.toggle("hidden");
+  });
 
-document.getElementById('addDateForm').addEventListener('submit', function (event) {
+  // Form Submit
+  document.getElementById("addDateForm").addEventListener("submit", (event) => {
     event.preventDefault();
-    const input = document.getElementById('TitleInput');
+
+    const input = document.getElementById("TitleInput");
 
     const newDate = {
-        id: Date.now(),
-        title: input.value,
-        size: document.querySelector('input[name="size"]:checked').value,
-        booking: document.getElementById('bookingCheckbox').checked
+      id: Date.now(),
+      title: input.value,
+      size: document.querySelector('input[name="size"]:checked').value,
+      booking: document.getElementById("bookingCheckbox").checked
     };
 
     dates.push(newDate);
     saveDates();
     renderDates();
-    input.value = '';
+
+    input.value = "";
     input.blur();
-    details.classList.add('hidden');
+    details.classList.add("hidden");
+  });
 
-});
+  loadDates();
+  renderDates();
+}
 
-// Initial load
-loadDates();
-renderDates();
+document.addEventListener("DOMContentLoaded", init);

@@ -1,4 +1,4 @@
-* {
+/* * {
     box-sizing: border-box;
 }
 
@@ -108,4 +108,115 @@ body {
   flex-direction: column;
   gap: 12px;
   transition: all 0.25s ease;
+} */
+
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 16px;
+  background: #f6f6f6;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+/* Filter */
+.filter {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.filter button {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  background: #eee;
+}
+
+/* Form */
+.date-form {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.main-row {
+  display: flex;
+  gap: 8px;
+}
+
+.main-row input {
+  flex: 1;
+  padding: 8px;
+  font-size: 16px;
+}
+
+.main-row button {
+  width: 44px;
+  font-size: 20px;
+}
+
+.details {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.save-btn {
+  background: #007aff;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Date List */
+.date-list {
+  list-style: none;
+  padding: 0;
+}
+
+.date-list li {
+  background: white;
+  margin-bottom: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.meta {
+  font-size: 12px;
+  color: #666;
+}
+
+.date-list button {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
 }
