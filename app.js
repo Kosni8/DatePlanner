@@ -4,6 +4,10 @@ const APP_VERSION = 1;
 let dates = [];
 
 let filter = 'all';
+const toggleBtn = document.getElementById('toggleDetails');
+const details = document.getElementById('details');
+
+
 
 function loadDates() {
 
@@ -79,6 +83,11 @@ document.getElementById('filterBig').onclick = () => {
     renderDates();
 }
 
+toggleBtn.addEventListener('click', () => {
+    details.classList.toggle('hidden');
+});
+
+
 document.getElementById('addDateForm').addEventListener('submit', function (event) {
     event.preventDefault();
     const input = document.getElementById('TitleInput');
@@ -95,6 +104,8 @@ document.getElementById('addDateForm').addEventListener('submit', function (even
     renderDates();
     input.value = '';
     input.blur();
+    details.classList.add('hidden');
+
 });
 
 // Initial load

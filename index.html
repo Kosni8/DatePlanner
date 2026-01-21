@@ -29,28 +29,39 @@
             <ul id="DateList" class="date-list"></ul>
         </main>
 
-        <form id="addDateForm" class="addDate-form">
-            <input type="text" id="TitleInput" placeholder="Date-Idee eingeben" required>
 
-            <div class="form-row">
+        <form id="dateForm" class="date-form">
+            <div class="main-row">
+                <input
+                type="text"
+                id="TitleInput"
+                placeholder="Neue Date-Idee"
+                required
+                />
+                <button type="button" id="toggleDetails">＋</button>
+            </div>
+
+            <div id="details" class="hidden">
+                <div class="form-row">
                 <label>
-                    <input type="radio" name="size" value="klein" checked/>
+                    <input type="radio" name="size" value="klein" checked />
                     Klein
                 </label>
                 <label>
                     <input type="radio" name="size" value="groß" />
                     Groß
-                </label>    
-            </div>
+                </label>
+                </div>
 
-            <label class="form-row">
-                <input type="checkbox" id="bookingCheckbox">
+                <label class="form-row">
+                <input type="checkbox" id="bookingCheckbox" />
                 Buchen nötig
-            </label>
+                </label>
 
-
-            <button id="submitButton" type="submit">+</button>
+                <button type="submit" id="submitButton">Date speichern</button>
+            </div>
         </form>
+
 
     </div>
     <script src="app.js"></script>
