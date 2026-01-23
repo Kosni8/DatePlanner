@@ -1,75 +1,3 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Date Planner</title>
-</head>
-
-<body>
-    <div class="app">
-
-        <header class="header">
-            <h1>Date Planner</h1>
-        </header>
-
-        <div class="filter">
-            <button id="filterAll">Alle</button>
-            <button id="filterSmall">Klein</button>
-            <button id="filterBig">Groß</button>
-        </div>
-
-        <main>
-            <ul id="DateList" class="date-list"></ul>
-        </main>
-
-
-        <form id="dateForm" class="date-form">
-            <div class="main-row">
-                <input
-                type="text"
-                id="TitleInput"
-                placeholder="Neue Date-Idee"
-                required
-                />
-                <button type="button" id="toggleDetails">＋</button>
-            </div>
-
-            <div id="details" class="hidden">
-                <div class="form-row">
-                <label>
-                    <input type="radio" name="size" value="klein" checked />
-                    Klein
-                </label>
-                <label>
-                    <input type="radio" name="size" value="groß" />
-                    Groß
-                </label>
-                </div>
-
-                <label class="form-row">
-                <input type="checkbox" id="bookingCheckbox" />
-                Buchen nötig
-                </label>
-
-                <button type="submit" id="submitButton">Date speichern</button>
-            </div>
-        </form>
-
-
-    </div>
-    <script src="app.js"></script>
-</body>
-
-</html> -->
-
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -81,6 +9,33 @@
 <body>
 
   <h1>Date Planner</h1>
+
+  <section id="planSection">
+      <h2>Planung</h2>
+
+      <input type="number" id="timeInput" placeholder="Verfügbare Zeit (Std)" />
+
+      <input type="number" id="smallInput" placeholder="Anzahl kleine Dates" />
+      <input type="number" id="bigInput" placeholder="Anzahl große Dates" />
+
+      <label>
+        <input type="radio" name="mode" value="exact" checked />
+        Exakte Anzahl
+      </label>
+      <label>
+        <input type="radio" name="mode" value="max" />
+        Maximale Anzahl
+      </label>
+
+      <button id="startPlanning">Vorschläge erstellen</button>
+  </section>
+
+  <section id="suggestSection">
+      <h2>Vorschläge</h2>
+      <ul id="suggestList"></ul>
+
+      <button id="backToPlan">Zurück</button>
+  </section>
 
   <!-- Filter -->
   <div class="filter">
