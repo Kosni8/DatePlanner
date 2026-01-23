@@ -1,180 +1,170 @@
 const APP_VERSION = 1;
 
+/* -------------------- STATE -------------------- */
+
 let dates = [];
 let filter = "all";
-let appState = "manage";
+
 let planConfig = {
-  availableTime: 0,
-  smallCount: 0,
-  bigCount: 0,
-  mode: "exact"
+    smallCount: 0,
+    bigCount: 0
 };
 
-// HIER ANGEBEN WIE OFT EIN DATE WIEDER VERWENDET WERDEN KANN
-const COOLDOWN_WEEKS ={
-  klein: 2,
-  groß: 4
-}
+let currentSuggestions = [];
+let rejectedIds = [];
 
+/* -------------------- COOLDOWN -------------------- */
 
-function renderApp() {
-  document.getElementById("planSection").style.display = appState === "plan" ? "block" : "none";
-
-  document.getElementById("suggestSection").style.display = appState === "suggest" ? "block" : "none";
-
-}
-
-
-document.getElementById("startPlanning").onclick = () => {
-
-  planConfig.availableTime = Number(document.getElementById("timeInput").value);
-
-  planConfig.smallCount = Number(document.getElementById("smallInput").value);
-
-  planConfig.bigCount = Number(document.getElementById("bigInput").value);
-
-  planConfig.mode = document.querySelector('input[name="mode"]:checked').value;
-
-  appState = "suggest";
-  renderSuggestions();
-  renderApp();
-
-}
-
-document.getElementById("backToPlan").onclick = () => {
-  appState = "plan";
-  renderApp();
+const COOLDOWN_WEEKS = {
+    klein: 2,
+    groß: 4
 };
 
+/* -------------------- INIT -------------------- */
 
-function renderSuggestions() {
-  const list = document.getElementById("suggestList");
-  list.innerHTML = "";
+document.addEventListener("DOMContentLoaded", () => {
+    loadDates();
+    renderDates();
+    bindUI();
+});
 
-  const li = document.createElement("li");
-  li.textContent = "Diese Funktion ist noch in Arbeit!";
-  list.appendChild(li);
-}
+/* -------------------- UI BINDINGS -------------------- */
 
+function bindUI() {
+    document.getElementById("createPlanBtn").onclick = startPlanning;
+    document.getElementById("confirmPlanBtn").onclick = confirmPlan;
 
-
-function isDateAvailable(date) {
-
-  if (!date.lastUsed) return true;
-
-  const cooldownWeeks = COOLDOWN_WEEKS[date.size];
-  const cooldownMs = cooldownWeeks * 7 * 24 * 60 * 60 * 1000;
-
-  const now = Date.now();
-  const nextAllowedTime = date.lastUsed + cooldownMs;
-
-  return now >= nextAllowedTime;
-}
-
-
-function getAvailableDates() {
-  return dates.filter(isDateAvailable);
-}
-
-function getAvailableDatesBySize(size) {
-  return getAvailableDates().filter(d => d.size === size);
-}
-
-function loadDates() {
-  const storedVersion = localStorage.getItem("appVersion");
-
-  if (storedVersion != APP_VERSION) {
-    localStorage.removeItem("dates");
-    localStorage.setItem("appVersion", APP_VERSION);
-  }
-
-  const storedDates = localStorage.getItem("dates");
-  dates = storedDates ? JSON.parse(storedDates) : [];
-}
-
-function saveDates() {
-  localStorage.setItem("dates", JSON.stringify(dates));
-}
-
-function renderDates() {
-  const dateList = document.getElementById("DateList");
-  dateList.innerHTML = "";
-
-  const filtered = dates.filter(d =>
-    filter === "all" ? true : d.size === filter
-  );
-
-  if (filtered.length === 0) {
-    dateList.innerHTML = "<li>Keine Dates vorhanden</li>";
-    return;
-  }
-
-  filtered.forEach(date => {
-    const li = document.createElement("li");
-
-    const left = document.createElement("div");
-
-    const title = document.createElement("div");
-    title.textContent = date.title;
-
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    meta.textContent = `${date.size} • ${date.booking ? "Buchen" : "Kein Buchen"}`;
-
-    left.appendChild(title);
-    left.appendChild(meta);
-
-    const del = document.createElement("button");
-    del.textContent = "X";
-    del.onclick = () => {
-      dates = dates.filter(d => d.id !== date.id);
-      saveDates();
-      renderDates();
+    document.getElementById("toggleDates").onclick = () => {
+        document.getElementById("datesContent").classList.toggle("hidden");
     };
 
-    li.appendChild(left);
-    li.appendChild(del);
-    dateList.appendChild(li);
-  });
+    document.getElementById("addDateForm").addEventListener("submit", addDate);
 }
 
-function init() {
-  // Filter
-  document.getElementById("filterAll").onclick = () => {
-    filter = "all";
+/* -------------------- PLANNING -------------------- */
+
+function startPlanning() {
+    planConfig.smallCount = Number(document.getElementById("smallCount").value);
+    planConfig.bigCount = Number(document.getElementById("bigCount").value);
+
+    rejectedIds = [];
+    generateSuggestions();
+    renderSuggestions();
+    updateConfirmButton();
+}
+
+function generateSuggestions() {
+    currentSuggestions = [];
+
+    const availableSmall = getAvailableDates("klein");
+    const availableBig = getAvailableDates("groß");
+
+    const pickedSmall = pickRandom(
+        availableSmall.filter(d => !rejectedIds.includes(d.id)),
+        planConfig.smallCount
+    );
+
+    const pickedBig = pickRandom(
+        availableBig.filter(d => !rejectedIds.includes(d.id)),
+        planConfig.bigCount
+    );
+
+    currentSuggestions.push(...pickedSmall, ...pickedBig);
+}
+
+function renderSuggestions() {
+    let list = document.getElementById("suggestList");
+    list.innerHTML = "";
+
+    if (currentSuggestions.length === 0) {
+        list.innerHTML = "<li>Keine passenden Dates verfügbar</li>";
+        return;
+    }
+
+    currentSuggestions.forEach(date => {
+        const li = document.createElement("li");
+
+        const left = document.createElement("div");
+        left.textContent = date.title;
+
+        const rejectBtn = document.createElement("button");
+        rejectBtn.textContent = "Ablehnen";
+        rejectBtn.onclick = () => {
+            rejectedIds.push(date.id);
+            generateSuggestions();
+            renderSuggestions();
+            updateConfirmButton();
+        };
+
+        li.appendChild(left);
+        li.appendChild(rejectBtn);
+        list.appendChild(li);
+    });
+}
+
+function confirmPlan() {
+    const now = Date.now();
+
+    currentSuggestions.forEach(suggestion => {
+        const real = dates.find(d => d.id === suggestion.id);
+        if (real) real.lastUsed = now;
+    });
+
+    saveDates();
+
+    currentSuggestions = [];
+    rejectedIds = [];
+
+    document.getElementById("suggestList").innerHTML = "";
+    document.getElementById("smallCount").value = "";
+    document.getElementById("bigCount").value = "";
+
     renderDates();
-  };
+    updateConfirmButton();
 
-  document.getElementById("filterSmall").onclick = () => {
-    filter = "klein";
-    renderDates();
-  };
+    alert("Dein Date-Plan wurde bestätigt!");
+}
 
-  document.getElementById("filterBig").onclick = () => {
-    filter = "groß";
-    renderDates();
-  };
+/* -------------------- CONFIRM BUTTON -------------------- */
 
-  // Toggle Details
-  const toggleBtn = document.getElementById("toggleDetails");
-  const details = document.getElementById("details");
+function updateConfirmButton() {
+    const btn = document.getElementById("confirmPlanBtn");
+    btn.disabled = currentSuggestions.length === 0;
+}
 
-  toggleBtn.addEventListener("click", () => {
-    details.classList.toggle("hidden");
-  });
+/* -------------------- DATE AVAILABILITY -------------------- */
 
-  // Form Submit
-  document.getElementById("addDateForm").addEventListener("submit", (event) => {
+function getAvailableDates(size) {
+    return dates.filter(d => {
+        if (d.size !== size) return false;
+        if (!d.lastUsed) return true;
+
+        const cooldown =
+            COOLDOWN_WEEKS[d.size] * 7 * 24 * 60 * 60 * 1000;
+
+        return Date.now() >= d.lastUsed + cooldown;
+    });
+}
+
+function pickRandom(array, count) {
+    return [...array]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, count);
+}
+
+/* -------------------- DATE MANAGEMENT -------------------- */
+
+function addDate(event) {
     event.preventDefault();
 
     const input = document.getElementById("TitleInput");
 
     const newDate = {
-      id: Date.now(),
-      title: input.value,
-      size: document.querySelector('input[name="size"]:checked').value,
-      booking: document.getElementById("bookingCheckbox").checked,
-      lastUsed: null
+        id: Date.now(),
+        title: input.value,
+        size: document.querySelector('input[name="size"]:checked').value,
+        booking: document.getElementById("bookingCheckbox").checked,
+        lastUsed: null
     };
 
     dates.push(newDate);
@@ -183,14 +173,51 @@ function init() {
 
     input.value = "";
     input.blur();
-    details.classList.add("hidden");
-  });
-
-  loadDates();
-  renderDates();
 }
 
-document.addEventListener("DOMContentLoaded", init);
+function renderDates() {
+    const list = document.getElementById("DateList");
+    list.innerHTML = "";
 
-appState = "plan";
-renderApp();
+    if (dates.length === 0) {
+        list.innerHTML = "<li>Keine Dates vorhanden</li>";
+        return;
+    }
+
+    dates.forEach(date => {
+        const li = document.createElement("li");
+
+        const left = document.createElement("div");
+        left.textContent = date.title;
+
+        const del = document.createElement("button");
+        del.textContent = "X";
+        del.onclick = () => {
+            dates = dates.filter(d => d.id !== date.id);
+            saveDates();
+            renderDates();
+        };
+
+        li.appendChild(left);
+        li.appendChild(del);
+        list.appendChild(li);
+    });
+}
+
+/* -------------------- STORAGE -------------------- */
+
+function loadDates() {
+    const storedVersion = localStorage.getItem("appVersion");
+
+    if (storedVersion != APP_VERSION) {
+        localStorage.removeItem("dates");
+        localStorage.setItem("appVersion", APP_VERSION);
+    }
+
+    const stored = localStorage.getItem("dates");
+    dates = stored ? JSON.parse(stored) : [];
+}
+
+function saveDates() {
+    localStorage.setItem("dates", JSON.stringify(dates));
+}

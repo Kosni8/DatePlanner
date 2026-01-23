@@ -1,3 +1,4 @@
+<!--
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -35,16 +36,18 @@
       <ul id="suggestList"></ul>
 
       <button id="backToPlan">Zurück</button>
+      <button id="confirmPlan">Plan bestätigen</button>
+
   </section>
 
-  <!-- Filter -->
+
   <div class="filter">
     <button id="filterAll">Alle</button>
     <button id="filterSmall">Klein</button>
     <button id="filterBig">Groß</button>
   </div>
 
-  <!-- Add Date Form -->
+  
   <form id="addDateForm" class="date-form">
 
     <div class="main-row">
@@ -79,9 +82,105 @@
 
   </form>
 
-  <!-- Date List -->
+
   <ul id="DateList" class="date-list"></ul>
 
   <script src="app.js"></script>
 </body>
 </html>
+ -->
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Date Planner</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+    <main>
+
+        <!-- PLANUNG (Hauptbereich) -->
+        <section id="planningSection">
+            <h2>Wochenplanung</h2>
+
+            <label>
+                Kleine Dates
+                <input type="number" id="smallCount" min="0" placeholder="z.B. 2" />
+            </label>
+
+            <label>
+                Große Dates
+                <input type="number" id="bigCount" min="0" placeholder="z.B. 1" />
+            </label>
+
+            <button id="createPlanBtn">
+                Plan erstellen
+            </button>
+
+            <section id="suggestSection">
+              <h2>Vorschläge</h2>
+              <ul id="suggestList"></ul>
+
+            </section>
+
+            <button id="confirmPlanBtn" disabled>
+                Plan bestätigen
+            </button>
+        </section>
+
+        <!-- DATES VERWALTEN (sekundär, einklappbar) -->
+        <section id="datesSection">
+            <button id="toggleDates">
+                Dates verwalten ▼
+            </button>
+
+            <div id="datesContent" class="hidden">
+
+                <!-- Date hinzufügen -->
+                <form id="addDateForm">
+                    <h3>Date hinzufügen</h3>
+
+                    <label>
+                        Name
+                        <input type="text" id="TitleInput" required />
+                    </label>
+
+                    <div class="options">
+                        <label>
+                            <input type="radio" name="size" value="klein" checked />
+                            Klein
+                        </label>
+
+                        <label>
+                            <input type="radio" name="size" value="groß" />
+                            Groß
+                        </label>
+                    </div>
+
+                    <label class="checkbox">
+                        <input type="checkbox" id="bookingCheckbox" />
+                        Muss gebucht werden
+                    </label>
+
+                    <button type="submit">
+                        Hinzufügen
+                    </button>
+                </form>
+
+                <!-- Date Liste -->
+                <ul id="DateList"></ul>
+
+            </div>
+        </section>
+
+    </main>
+    <script src="app.js"></script>
+
+</body>
+</html>
+
+
+
