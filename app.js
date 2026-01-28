@@ -72,6 +72,33 @@ function generateSuggestions() {
     currentSuggestions.push(...pickedSmall, ...pickedBig);
 }
 
+function replaceSuggestion(rejectedDate) {
+    const index = currentSuggestions.findIndex(
+        d => d.id === rejectedDate.id
+    );
+
+    if (index === -1) return;
+
+    const candidates = getAvailableDates(rejectedDate.size)
+        .filter(d =>
+            !rejectedIds.includes(d.id) &&
+            !currentSuggestions.some(s => s.id === d.id)
+        );
+
+    if (candidates.length === 0) {
+        // Kein Ersatz → einfach entfernen
+        currentSuggestions.splice(index, 1);
+        return;
+    }
+
+    const replacement = pickRandom(candidates, 1)[0];
+
+    // Ersetzen an gleicher Position
+    currentSuggestions.splice(index, 1, replacement);
+}
+
+
+
 function renderSuggestions() {
     let list = document.getElementById("suggestList");
     list.innerHTML = "";
@@ -88,10 +115,11 @@ function renderSuggestions() {
         left.textContent = date.title;
 
         const rejectBtn = document.createElement("button");
+        rejectBtn.className = "ButtonReject";
         rejectBtn.textContent = "Ablehnen";
         rejectBtn.onclick = () => {
             rejectedIds.push(date.id);
-            generateSuggestions();
+            replaceSuggestion(date);
             renderSuggestions();
             updateConfirmButton();
         };
@@ -184,13 +212,33 @@ function renderDates() {
         return;
     }
 
-    dates.forEach(date => {
-        const li = document.createElement("li");
+     const filtered = dates.filter(d =>
+        filter === 'all' ? true : d.size === filter
+    );
 
-        const left = document.createElement("div");
-        left.textContent = date.title;
+    if (filtered.length === 0) {
+        dateList.innerHTML = '<li>Keine Dates vorhanden</li>';
+        return;
+    }
+
+    filtered.forEach(date => {
+        const li = document.createElement('li');
+
+        const left = document.createElement('div')
+        const title = document.createElement('div');
+        title.textContent = date.title;
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = `${date.size} • ${date.booking ? "Buchen" : "Kein Buchen"}`;
+
+        left.appendChild(title);
+        left.appendChild(meta);
+
+    
 
         const del = document.createElement("button");
+        del.className = "ButtonDelete";
         del.textContent = "X";
         del.onclick = () => {
             dates = dates.filter(d => d.id !== date.id);
@@ -202,6 +250,24 @@ function renderDates() {
         li.appendChild(del);
         list.appendChild(li);
     });
+
+    
+}
+
+document.getElementById('filterAll').onclick = () => {
+    filter = 'all';
+    renderDates();
+}
+
+
+document.getElementById('filterSmall').onclick = () => {
+    filter = 'klein';
+    renderDates();
+}
+
+document.getElementById('filterBig').onclick = () => {
+    filter = 'groß';
+    renderDates();
 }
 
 /* -------------------- STORAGE -------------------- */
