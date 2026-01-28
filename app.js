@@ -80,6 +80,15 @@ function getAvailableDatesBySize(size) {
   return getAvailableDates().filter(d => d.size === size);
 }
 
+
+//Notizen 
+// UI MUSS angepasst werden für Handy
+// Viel abstand zwischen planung und Date add
+// GGF Date Add zuklappen?
+// Planung UI Mobile First design
+
+
+
 function loadDates() {
   const storedVersion = localStorage.getItem("appVersion");
 
