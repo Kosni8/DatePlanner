@@ -192,6 +192,8 @@ function addDate(event) {
         title: input.value,
         size: document.querySelector('input[name="size"]:checked').value,
         booking: document.getElementById("bookingCheckbox").checked,
+        categories: getSelectedCategories(),
+        energy: getSelectedEnergy() || "medium",
         lastUsed: null
     };
 
@@ -202,6 +204,18 @@ function addDate(event) {
     input.value = "";
     input.blur();
 }
+
+function getSelectedCategories() {
+  return Array.from(
+    document.querySelectorAll('input[name="category"]:checked')
+  ).map(cb => cb.value);
+}
+
+function getSelectedEnergy() {
+  const selected = document.querySelector('input[name="energy"]:checked');
+  return selected ? selected.value : null;
+}
+
 
 function renderDates() {
     const list = document.getElementById("DateList");
@@ -230,7 +244,8 @@ function renderDates() {
 
         const meta = document.createElement('div');
         meta.className = 'meta';
-        meta.textContent = `${date.size} • ${date.booking ? "Buchen" : "Kein Buchen"}`;
+        meta.textContent = `${date.size} • ${date.energy} • ${date.categories.join(", ")}`;
+
 
         left.appendChild(title);
         left.appendChild(meta);
@@ -282,6 +297,12 @@ function loadDates() {
 
     const stored = localStorage.getItem("dates");
     dates = stored ? JSON.parse(stored) : [];
+
+    dates = dates.map(d => ({
+      ...d,
+      categories: d.categories || [],
+      energy: d.energy || "medium"
+    }));
 }
 
 function saveDates() {
