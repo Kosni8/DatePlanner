@@ -98,6 +98,9 @@ function bindUI() {
     // Konto
     document.getElementById("loginForm").addEventListener("submit", sendLoginLink);
     document.getElementById("logoutBtn").onclick = () => Cloud.signOut();
+    document.getElementById("accountToggle").onclick = () => {
+        setAccountExpanded(document.getElementById("accountDetails").classList.contains("hidden"));
+    };
 }
 
 /* -------------------- PLANNING -------------------- */
@@ -573,30 +576,53 @@ async function sendLoginLink(event) {
     button.disabled = false;
 }
 
+function setAccountExpanded(expanded) {
+    document.getElementById("accountDetails").classList.toggle("hidden", !expanded);
+    document.getElementById("accountToggle").setAttribute("aria-expanded", String(expanded));
+}
+
 function renderAccount() {
     const state = Cloud.getState();
+    const section = document.getElementById("accountSection");
 
-    document.getElementById("accountSection").classList.toggle("hidden", !state.enabled);
+    section.classList.toggle("hidden", !state.enabled);
     if (!state.enabled) return;
 
-    document.getElementById("loggedOut").classList.toggle("hidden", Boolean(state.email));
-    document.getElementById("loggedIn").classList.toggle("hidden", !state.email);
+    const loggedIn = Boolean(state.email);
+    section.classList.toggle("compact", loggedIn);
+
+    // Nach dem Anmelden zugeklappt, nur der Sync-Status bleibt sichtbar
+    if (loggedIn && document.getElementById("loggedIn").classList.contains("hidden")) {
+        setAccountExpanded(false);
+    }
+
+    document.getElementById("loggedOut").classList.toggle("hidden", loggedIn);
+    document.getElementById("loggedIn").classList.toggle("hidden", !loggedIn);
     document.getElementById("accountEmail").textContent = state.email || "";
 
-    let status = "";
+    if (!loggedIn) {
+        document.getElementById("loggedOutStatus").textContent = state.online
+            ? "Nicht angemeldet: Änderungen bleiben vorerst in diesem Browser."
+            : "Offline: Änderungen werden hochgeladen, sobald du wieder online bist.";
+        return;
+    }
+
+    let status = "Synchron";
+    let level = "ok";
     if (!state.online) {
-        status = "Offline: Änderungen werden hochgeladen, sobald du wieder online bist.";
-    } else if (!state.email) {
-        status = "Nicht angemeldet: Änderungen bleiben vorerst in diesem Browser.";
+        status = "Offline, wird später hochgeladen";
+        level = "off";
     } else if (state.notMember) {
-        status = "Diese E-Mail ist noch nicht für eure Liste freigeschaltet.";
+        status = "E-Mail nicht freigeschaltet";
+        level = "error";
     } else if (state.syncing) {
         status = "Synchronisiere…";
+        level = "busy";
     } else if (state.pendingCount > 0) {
-        status = "Noch nicht alles hochgeladen, neuer Versuch läuft gleich.";
-    } else {
-        status = "In der Cloud gespeichert.";
+        status = "Noch nicht alles hochgeladen";
+        level = "busy";
     }
 
     document.getElementById("syncStatus").textContent = status;
+    document.getElementById("syncDot").className = `sync-dot ${level}`;
 }
