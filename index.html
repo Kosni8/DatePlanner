@@ -118,6 +118,52 @@
         <input type="number" id="bigCount" min="0" placeholder="z.B. 1" />
       </label>
 
+      <div class="plan-options">
+        <label>
+          Saison
+          <select id="planSeason">
+            <option value="auto">Automatisch</option>
+            <option value="sommer">Sommer</option>
+            <option value="winter">Winter</option>
+            <option value="egal">Egal</option>
+          </select>
+        </label>
+
+        <label>
+          Wetter
+          <select id="planWeather">
+            <option value="egal">Egal / gut</option>
+            <option value="schlecht">Schlecht (nichts Wetterabhängiges)</option>
+          </select>
+        </label>
+
+        <label>
+          Energie
+          <select id="planEnergy">
+            <option value="egal">Egal</option>
+            <option value="low">Low</option>
+            <option value="medium">Bis Medium</option>
+            <option value="high">Bis High</option>
+          </select>
+        </label>
+
+        <label>
+          Kategorie
+          <select id="planCategory">
+            <option value="egal">Egal</option>
+            <option value="drinnen">Drinnen</option>
+            <option value="draußen">Draußen</option>
+            <option value="aktiv">Aktiv</option>
+            <option value="chillig">Chillig</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="checkbox">
+        <input type="checkbox" id="planNoBooking" />
+        Nur Dates ohne Buchung
+      </label>
+
       <button id="createPlanBtn" class="ButtonBig">
         Plan erstellen
       </button>
@@ -210,6 +256,30 @@
             </label>
           </div>
 
+          <div class="options">
+            <strong>Saison</strong>
+
+            <label>
+              <input type="radio" name="season" value="ganzjährig" checked>
+              Ganzjährig
+            </label>
+
+            <label>
+              <input type="radio" name="season" value="sommer">
+              Sommer
+            </label>
+
+            <label>
+              <input type="radio" name="season" value="winter">
+              Winter
+            </label>
+          </div>
+
+          <label class="checkbox">
+            <input type="checkbox" id="weatherCheckbox" />
+            Wetterabhängig (nur bei gutem Wetter)
+          </label>
+
 
           <button type="submit" class="ButtonBig">
             Hinzufügen
@@ -219,13 +289,69 @@
         <!-- Date Liste -->
         <h4>Liste der Dates</h4>
 
-        <div class="filter">
-          <button id="filterAll" class="ButtonFilter">Alle</button>
-          <button id="filterSmall" class="ButtonFilter">Klein</button>
-          <button id="filterBig" class="ButtonFilter">Groß</button>
+        <div id="listFilter" class="filter">
+          <input type="text" id="filterSearch" placeholder="Suchen..." />
+
+          <div class="filter-grid">
+            <select id="filterSize">
+              <option value="all">Größe: alle</option>
+              <option value="klein">Klein</option>
+              <option value="groß">Groß</option>
+            </select>
+
+            <select id="filterSeason">
+              <option value="all">Saison: alle</option>
+              <option value="sommer">Sommer</option>
+              <option value="winter">Winter</option>
+              <option value="ganzjährig">Ganzjährig</option>
+            </select>
+
+            <select id="filterEnergy">
+              <option value="all">Energie: alle</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+
+            <select id="filterCategory">
+              <option value="all">Kategorie: alle</option>
+              <option value="drinnen">Drinnen</option>
+              <option value="draußen">Draußen</option>
+              <option value="aktiv">Aktiv</option>
+              <option value="chillig">Chillig</option>
+            </select>
+
+            <select id="filterWeather">
+              <option value="all">Wetter: alle</option>
+              <option value="ja">Wetterabhängig</option>
+              <option value="nein">Wetterunabhängig</option>
+            </select>
+
+            <select id="filterBooking">
+              <option value="all">Buchung: alle</option>
+              <option value="ja">Muss gebucht werden</option>
+              <option value="nein">Ohne Buchung</option>
+            </select>
+          </div>
+
+          <div class="filter-footer">
+            <span id="filterCount" class="meta"></span>
+            <button type="button" id="filterReset" class="ButtonFilter">Zurücksetzen</button>
+          </div>
         </div>
 
         <ul id="DateList"></ul>
+
+        <!-- Backup -->
+        <h4>Backup</h4>
+        <p class="meta">Die Dates liegen nur in diesem Browser. Exportiere sie ab und zu als Datei, um sie zu sichern oder auf ein anderes Gerät zu übertragen.</p>
+        <div class="backup">
+          <button type="button" id="exportBtn" class="ButtonFilter">Exportieren</button>
+          <label class="ButtonFilter import-label">
+            Importieren
+            <input type="file" id="importInput" accept="application/json,.json" hidden />
+          </label>
+        </div>
 
       </div>
     </section>

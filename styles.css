@@ -252,3 +252,60 @@ button:disabled {
 .hidden {
     display: none;
 }
+
+/* ---------- SELECTS ---------- */
+
+select {
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    background: #fff;
+}
+
+/* ---------- PLAN OPTIONS ---------- */
+
+.plan-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
+}
+
+/* ---------- LIST FILTER ---------- */
+
+.filter input[type="text"] {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.filter-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+/* ---------- BACKUP ---------- */
+
+.backup {
+    display: flex;
+    gap: 8px;
+}
+
+.import-label {
+    margin-bottom: 0;
+}
+
+.plan-options label {
+    min-width: 0;
+}
+
+.plan-options select {
+    width: 100%;
+}

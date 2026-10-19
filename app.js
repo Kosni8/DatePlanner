@@ -1,30 +1,54 @@
-const APP_VERSION = 1;
+const APP_VERSION = 2;
 
 /* -------------------- STATE -------------------- */
 
 let dates = [];
-let filter = "all";
+
+let listFilter = {
+    search: "",
+    size: "all",
+    season: "all",
+    energy: "all",
+    category: "all",
+    weather: "all",
+    booking: "all"
+};
 
 let planConfig = {
     smallCount: 0,
-    bigCount: 0
+    bigCount: 0,
+    season: "auto",
+    weather: "egal",
+    energy: "egal",
+    category: "egal",
+    noBooking: false
 };
 
 let currentSuggestions = [];
 let rejectedIds = [];
 
-/* -------------------- COOLDOWN -------------------- */
+/* -------------------- KONSTANTEN -------------------- */
 
 const COOLDOWN_WEEKS = {
     klein: 2,
     groß: 4
 };
 
+const ENERGY_LEVELS = ["low", "medium", "high"];
+
+const SEASON_LABELS = {
+    sommer: "Sommer",
+    winter: "Winter",
+    ganzjährig: "Ganzjährig"
+};
+
 /* -------------------- INIT -------------------- */
 
 document.addEventListener("DOMContentLoaded", () => {
     loadDates();
+    requestPersistentStorage();
     renderDates();
+    renderSeasonHint();
     bindUI();
 });
 
@@ -39,6 +63,32 @@ function bindUI() {
     };
 
     document.getElementById("addDateForm").addEventListener("submit", addDate);
+
+    // Filter der Date-Liste
+    document.getElementById("filterSearch").addEventListener("input", e => {
+        listFilter.search = e.target.value.trim().toLowerCase();
+        renderDates();
+    });
+
+    [
+        ["filterSize", "size"],
+        ["filterSeason", "season"],
+        ["filterEnergy", "energy"],
+        ["filterCategory", "category"],
+        ["filterWeather", "weather"],
+        ["filterBooking", "booking"]
+    ].forEach(([id, key]) => {
+        document.getElementById(id).addEventListener("change", e => {
+            listFilter[key] = e.target.value;
+            renderDates();
+        });
+    });
+
+    document.getElementById("filterReset").onclick = resetListFilter;
+
+    // Backup
+    document.getElementById("exportBtn").onclick = exportDates;
+    document.getElementById("importInput").addEventListener("change", importDates);
 }
 
 /* -------------------- PLANNING -------------------- */
@@ -46,6 +96,11 @@ function bindUI() {
 function startPlanning() {
     planConfig.smallCount = Number(document.getElementById("smallCount").value);
     planConfig.bigCount = Number(document.getElementById("bigCount").value);
+    planConfig.season = document.getElementById("planSeason").value;
+    planConfig.weather = document.getElementById("planWeather").value;
+    planConfig.energy = document.getElementById("planEnergy").value;
+    planConfig.category = document.getElementById("planCategory").value;
+    planConfig.noBooking = document.getElementById("planNoBooking").checked;
 
     rejectedIds = [];
     generateSuggestions();
@@ -56,18 +111,13 @@ function startPlanning() {
 function generateSuggestions() {
     currentSuggestions = [];
 
-    const availableSmall = getAvailableDates("klein");
-    const availableBig = getAvailableDates("groß");
+    const availableSmall = getAvailableDates("klein")
+        .filter(d => !rejectedIds.includes(d.id));
+    const availableBig = getAvailableDates("groß")
+        .filter(d => !rejectedIds.includes(d.id));
 
-    const pickedSmall = pickRandom(
-        availableSmall.filter(d => !rejectedIds.includes(d.id)),
-        planConfig.smallCount
-    );
-
-    const pickedBig = pickRandom(
-        availableBig.filter(d => !rejectedIds.includes(d.id)),
-        planConfig.bigCount
-    );
+    const pickedSmall = pickWeighted(availableSmall, planConfig.smallCount);
+    const pickedBig = pickWeighted(availableBig, planConfig.bigCount);
 
     currentSuggestions.push(...pickedSmall, ...pickedBig);
 }
@@ -91,20 +141,20 @@ function replaceSuggestion(rejectedDate) {
         return;
     }
 
-    const replacement = pickRandom(candidates, 1)[0];
+    const replacement = pickWeighted(candidates, 1)[0];
 
     // Ersetzen an gleicher Position
     currentSuggestions.splice(index, 1, replacement);
 }
 
-
-
 function renderSuggestions() {
-    let list = document.getElementById("suggestList");
+    const list = document.getElementById("suggestList");
     list.innerHTML = "";
 
+    const wanted = planConfig.smallCount + planConfig.bigCount;
+
     if (currentSuggestions.length === 0) {
-        list.innerHTML = "<li>Keine passenden Dates verfügbar</li>";
+        list.innerHTML = "<li>Keine passenden Dates verfügbar. Lockere die Filter oder füge neue Ideen hinzu.</li>";
         return;
     }
 
@@ -112,7 +162,15 @@ function renderSuggestions() {
         const li = document.createElement("li");
 
         const left = document.createElement("div");
-        left.textContent = date.title;
+        const title = document.createElement("div");
+        title.textContent = date.title;
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = describeDate(date);
+
+        left.appendChild(title);
+        left.appendChild(meta);
 
         const rejectBtn = document.createElement("button");
         rejectBtn.className = "ButtonReject";
@@ -128,6 +186,13 @@ function renderSuggestions() {
         li.appendChild(rejectBtn);
         list.appendChild(li);
     });
+
+    if (currentSuggestions.length < wanted) {
+        const hint = document.createElement("li");
+        hint.className = "meta";
+        hint.textContent = `Nur ${currentSuggestions.length} von ${wanted} passenden Dates gefunden.`;
+        list.appendChild(hint);
+    }
 }
 
 function confirmPlan() {
@@ -163,21 +228,84 @@ function updateConfirmButton() {
 /* -------------------- DATE AVAILABILITY -------------------- */
 
 function getAvailableDates(size) {
-    return dates.filter(d => {
-        if (d.size !== size) return false;
-        if (!d.lastUsed) return true;
-
-        const cooldown =
-            COOLDOWN_WEEKS[d.size] * 7 * 24 * 60 * 60 * 1000;
-
-        return Date.now() >= d.lastUsed + cooldown;
-    });
+    return dates.filter(d =>
+        d.size === size &&
+        !isOnCooldown(d) &&
+        matchesPlan(d)
+    );
 }
 
-function pickRandom(array, count) {
-    return [...array]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, count);
+function isOnCooldown(date) {
+    if (!date.lastUsed) return false;
+
+    const cooldown =
+        COOLDOWN_WEEKS[date.size] * 7 * 24 * 60 * 60 * 1000;
+
+    return Date.now() < date.lastUsed + cooldown;
+}
+
+// Prüft ein Date gegen die Planungs-Optionen
+function matchesPlan(date) {
+    const season = planConfig.season === "auto"
+        ? getCurrentSeason()
+        : planConfig.season;
+
+    if (season !== "egal" &&
+        date.season !== "ganzjährig" &&
+        date.season !== season) return false;
+
+    // Schlechtes Wetter → nichts Wetterabhängiges
+    if (planConfig.weather === "schlecht" && date.weatherDependent) return false;
+
+    // Energie: alles bis einschließlich des gewählten Levels
+    if (planConfig.energy !== "egal" &&
+        ENERGY_LEVELS.indexOf(date.energy) > ENERGY_LEVELS.indexOf(planConfig.energy)) return false;
+
+    if (planConfig.category !== "egal" &&
+        !date.categories.includes(planConfig.category)) return false;
+
+    if (planConfig.noBooking && date.booking) return false;
+
+    return true;
+}
+
+// April bis September = Sommer, sonst Winter
+function getCurrentSeason() {
+    const month = new Date().getMonth() + 1;
+    return month >= 4 && month <= 9 ? "sommer" : "winter";
+}
+
+function renderSeasonHint() {
+    const option = document.querySelector('#planSeason option[value="auto"]');
+    option.textContent = `Automatisch (gerade ${SEASON_LABELS[getCurrentSeason()]})`;
+}
+
+// Lange nicht gemachte Dates werden bevorzugt
+function getWeight(date) {
+    if (!date.lastUsed) return 3;
+
+    const weeksSince = (Date.now() - date.lastUsed) / (7 * 24 * 60 * 60 * 1000);
+    return Math.min(1 + weeksSince / 8, 3);
+}
+
+function pickWeighted(array, count) {
+    const pool = [...array];
+    const picked = [];
+
+    while (picked.length < count && pool.length > 0) {
+        const total = pool.reduce((sum, d) => sum + getWeight(d), 0);
+        let r = Math.random() * total;
+
+        let index = 0;
+        for (; index < pool.length - 1; index++) {
+            r -= getWeight(pool[index]);
+            if (r <= 0) break;
+        }
+
+        picked.push(pool.splice(index, 1)[0]);
+    }
+
+    return picked;
 }
 
 /* -------------------- DATE MANAGEMENT -------------------- */
@@ -194,6 +322,8 @@ function addDate(event) {
         booking: document.getElementById("bookingCheckbox").checked,
         categories: getSelectedCategories(),
         energy: getSelectedEnergy() || "medium",
+        season: document.querySelector('input[name="season"]:checked').value,
+        weatherDependent: document.getElementById("weatherCheckbox").checked,
         lastUsed: null
     };
 
@@ -216,22 +346,73 @@ function getSelectedEnergy() {
   return selected ? selected.value : null;
 }
 
+function describeDate(date) {
+    const parts = [
+        date.size,
+        date.energy,
+        SEASON_LABELS[date.season]
+    ];
+
+    if (date.weatherDependent) parts.push("wetterabhängig");
+    if (date.booking) parts.push("buchen");
+    if (date.categories.length) parts.push(date.categories.join(", "));
+
+    return parts.join(" • ");
+}
+
+/* -------------------- LIST FILTER -------------------- */
+
+function matchesListFilter(date) {
+    const f = listFilter;
+
+    if (f.search && !date.title.toLowerCase().includes(f.search)) return false;
+    if (f.size !== "all" && date.size !== f.size) return false;
+    if (f.season !== "all" && date.season !== f.season) return false;
+    if (f.energy !== "all" && date.energy !== f.energy) return false;
+    if (f.category !== "all" && !date.categories.includes(f.category)) return false;
+    if (f.weather === "ja" && !date.weatherDependent) return false;
+    if (f.weather === "nein" && date.weatherDependent) return false;
+    if (f.booking === "ja" && !date.booking) return false;
+    if (f.booking === "nein" && date.booking) return false;
+
+    return true;
+}
+
+function resetListFilter() {
+    listFilter = {
+        search: "",
+        size: "all",
+        season: "all",
+        energy: "all",
+        category: "all",
+        weather: "all",
+        booking: "all"
+    };
+
+    document.getElementById("filterSearch").value = "";
+    document.querySelectorAll("#listFilter select").forEach(s => {
+        s.value = "all";
+    });
+
+    renderDates();
+}
 
 function renderDates() {
     const list = document.getElementById("DateList");
+    const count = document.getElementById("filterCount");
     list.innerHTML = "";
 
     if (dates.length === 0) {
         list.innerHTML = "<li>Keine Dates vorhanden</li>";
+        count.textContent = "";
         return;
     }
 
-     const filtered = dates.filter(d =>
-        filter === 'all' ? true : d.size === filter
-    );
+    const filtered = dates.filter(matchesListFilter);
+    count.textContent = `${filtered.length} von ${dates.length} Dates`;
 
     if (filtered.length === 0) {
-        dateList.innerHTML = '<li>Keine Dates vorhanden</li>';
+        list.innerHTML = "<li>Keine Dates passen zum Filter</li>";
         return;
     }
 
@@ -244,18 +425,16 @@ function renderDates() {
 
         const meta = document.createElement('div');
         meta.className = 'meta';
-        meta.textContent = `${date.size} • ${date.energy} • ${date.categories.join(", ")}`;
-
+        meta.textContent = describeDate(date);
 
         left.appendChild(title);
         left.appendChild(meta);
-
-    
 
         const del = document.createElement("button");
         del.className = "ButtonDelete";
         del.textContent = "X";
         del.onclick = () => {
+            if (!confirm(`"${date.title}" wirklich löschen?`)) return;
             dates = dates.filter(d => d.id !== date.id);
             saveDates();
             renderDates();
@@ -265,46 +444,92 @@ function renderDates() {
         li.appendChild(del);
         list.appendChild(li);
     });
-
-    
-}
-
-document.getElementById('filterAll').onclick = () => {
-    filter = 'all';
-    renderDates();
-}
-
-
-document.getElementById('filterSmall').onclick = () => {
-    filter = 'klein';
-    renderDates();
-}
-
-document.getElementById('filterBig').onclick = () => {
-    filter = 'groß';
-    renderDates();
 }
 
 /* -------------------- STORAGE -------------------- */
 
 function loadDates() {
-    const storedVersion = localStorage.getItem("appVersion");
+    let stored = [];
 
-    if (storedVersion != APP_VERSION) {
-        localStorage.removeItem("dates");
-        localStorage.setItem("appVersion", APP_VERSION);
+    try {
+        stored = JSON.parse(localStorage.getItem("dates")) || [];
+    } catch {
+        stored = [];
     }
 
-    const stored = localStorage.getItem("dates");
-    dates = stored ? JSON.parse(stored) : [];
+    // Alte Daten werden migriert statt gelöscht
+    dates = stored.map(normalizeDate);
 
-    dates = dates.map(d => ({
-      ...d,
-      categories: d.categories || [],
-      energy: d.energy || "medium"
-    }));
+    localStorage.setItem("appVersion", APP_VERSION);
+    saveDates();
+}
+
+// Ergänzt fehlende Felder mit Standardwerten
+function normalizeDate(d) {
+    return {
+        ...d,
+        id: d.id ?? Date.now() + Math.random(),
+        size: d.size === "groß" ? "groß" : "klein",
+        booking: Boolean(d.booking),
+        categories: Array.isArray(d.categories) ? d.categories : [],
+        energy: ENERGY_LEVELS.includes(d.energy) ? d.energy : "medium",
+        season: SEASON_LABELS[d.season] ? d.season : "ganzjährig",
+        weatherDependent: Boolean(d.weatherDependent),
+        lastUsed: d.lastUsed || null
+    };
 }
 
 function saveDates() {
     localStorage.setItem("dates", JSON.stringify(dates));
+}
+
+// Bittet den Browser, die Daten nicht automatisch zu löschen
+function requestPersistentStorage() {
+    if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist();
+    }
+}
+
+/* -------------------- BACKUP -------------------- */
+
+function exportDates() {
+    const data = JSON.stringify({ version: APP_VERSION, dates }, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dates-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
+function importDates(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const parsed = JSON.parse(reader.result);
+            const imported = Array.isArray(parsed) ? parsed : parsed.dates;
+
+            if (!Array.isArray(imported)) throw new Error("Ungültige Datei");
+
+            // Zusammenführen: gleiche IDs werden überschrieben
+            const byId = new Map(dates.map(d => [d.id, d]));
+            imported.map(normalizeDate).forEach(d => byId.set(d.id, d));
+            dates = [...byId.values()];
+
+            saveDates();
+            renderDates();
+            alert(`${imported.length} Dates importiert.`);
+        } catch {
+            alert("Die Datei konnte nicht gelesen werden.");
+        }
+
+        event.target.value = "";
+    };
+    reader.readAsText(file);
 }
