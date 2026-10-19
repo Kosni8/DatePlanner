@@ -309,3 +309,34 @@ select {
 .plan-options select {
     width: 100%;
 }
+
+/* ---------- KONTO ---------- */
+
+input[type="email"] {
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+.login-form {
+    display: flex;
+    gap: 8px;
+}
+
+.login-form input {
+    flex: 1;
+    min-width: 0;
+}
+
+.account-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+#syncStatus {
+    margin-bottom: 0;
+}

@@ -50,6 +50,11 @@ document.addEventListener("DOMContentLoaded", () => {
     renderDates();
     renderSeasonHint();
     bindUI();
+
+    Cloud.init({
+        onRemoteDates: applyRemoteDates,
+        onStatusChange: renderAccount
+    });
 });
 
 /* -------------------- UI BINDINGS -------------------- */
@@ -89,6 +94,10 @@ function bindUI() {
     // Backup
     document.getElementById("exportBtn").onclick = exportDates;
     document.getElementById("importInput").addEventListener("change", importDates);
+
+    // Konto
+    document.getElementById("loginForm").addEventListener("submit", sendLoginLink);
+    document.getElementById("logoutBtn").onclick = () => Cloud.signOut();
 }
 
 /* -------------------- PLANNING -------------------- */
@@ -459,6 +468,7 @@ function loadDates() {
 
     // Alte Daten werden migriert statt gelöscht
     dates = stored.map(normalizeDate);
+    Cloud.setBaseline(dates);
 
     localStorage.setItem("appVersion", APP_VERSION);
     saveDates();
@@ -481,6 +491,15 @@ function normalizeDate(d) {
 
 function saveDates() {
     localStorage.setItem("dates", JSON.stringify(dates));
+    Cloud.track(dates);
+}
+
+// Neuer Stand aus der Cloud ersetzt den lokalen Zwischenspeicher
+function applyRemoteDates(remoteDates) {
+    dates = remoteDates.map(normalizeDate);
+    Cloud.setBaseline(dates);
+    localStorage.setItem("dates", JSON.stringify(dates));
+    renderDates();
 }
 
 // Bittet den Browser, die Daten nicht automatisch zu löschen
@@ -532,4 +551,52 @@ function importDates(event) {
         event.target.value = "";
     };
     reader.readAsText(file);
+}
+
+/* -------------------- KONTO -------------------- */
+
+async function sendLoginLink(event) {
+    event.preventDefault();
+
+    const input = document.getElementById("loginEmail");
+    const button = event.target.querySelector("button");
+    button.disabled = true;
+
+    try {
+        await Cloud.sendLoginLink(input.value.trim());
+        alert("Login-Link verschickt. Öffne die Mail auf dem Gerät, auf dem du die App nutzen willst.");
+        input.value = "";
+    } catch (err) {
+        alert(`Login-Link konnte nicht verschickt werden: ${err.message}`);
+    }
+
+    button.disabled = false;
+}
+
+function renderAccount() {
+    const state = Cloud.getState();
+
+    document.getElementById("accountSection").classList.toggle("hidden", !state.enabled);
+    if (!state.enabled) return;
+
+    document.getElementById("loggedOut").classList.toggle("hidden", Boolean(state.email));
+    document.getElementById("loggedIn").classList.toggle("hidden", !state.email);
+    document.getElementById("accountEmail").textContent = state.email || "";
+
+    let status = "";
+    if (!state.online) {
+        status = "Offline: Änderungen werden hochgeladen, sobald du wieder online bist.";
+    } else if (!state.email) {
+        status = "Nicht angemeldet: Änderungen bleiben vorerst in diesem Browser.";
+    } else if (state.notMember) {
+        status = "Diese E-Mail ist noch nicht für eure Liste freigeschaltet.";
+    } else if (state.syncing) {
+        status = "Synchronisiere…";
+    } else if (state.pendingCount > 0) {
+        status = "Noch nicht alles hochgeladen, neuer Versuch läuft gleich.";
+    } else {
+        status = "In der Cloud gespeichert.";
+    }
+
+    document.getElementById("syncStatus").textContent = status;
 }

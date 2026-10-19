@@ -104,6 +104,24 @@
 
   <main>
 
+    <!-- KONTO (nur sichtbar, wenn Supabase eingerichtet ist) -->
+    <section id="accountSection" class="hidden">
+      <div id="loggedOut">
+        <p class="meta">Melde dich an, damit eure Dates in der Cloud liegen und auf allen Handys gleich sind.</p>
+        <form id="loginForm" class="login-form">
+          <input type="email" id="loginEmail" placeholder="E-Mail-Adresse" autocomplete="email" required />
+          <button type="submit" class="ButtonFilter">Login-Link senden</button>
+        </form>
+      </div>
+
+      <div id="loggedIn" class="account-row hidden">
+        <span>Angemeldet als <strong id="accountEmail"></strong></span>
+        <button type="button" id="logoutBtn" class="ButtonFilter">Abmelden</button>
+      </div>
+
+      <p id="syncStatus" class="meta"></p>
+    </section>
+
     <!-- PLANUNG (Hauptbereich) -->
     <section id="planningSection">
       <h2>Wochenplanung</h2>
@@ -344,7 +362,7 @@
 
         <!-- Backup -->
         <h4>Backup</h4>
-        <p class="meta">Die Dates liegen nur in diesem Browser. Exportiere sie ab und zu als Datei, um sie zu sichern oder auf ein anderes Gerät zu übertragen.</p>
+        <p class="meta">Exportiere die Dates ab und zu als Datei, um sie zusätzlich zu sichern oder ohne Anmeldung auf ein anderes Gerät zu übertragen.</p>
         <div class="backup">
           <button type="button" id="exportBtn" class="ButtonFilter">Exportieren</button>
           <label class="ButtonFilter import-label">
@@ -357,6 +375,9 @@
     </section>
 
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="cloud.js"></script>
   <script src="app.js"></script>
 
 </body>
