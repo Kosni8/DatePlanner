@@ -103,6 +103,9 @@
   <meta name="apple-mobile-web-app-title" content="Date Planner" />
   <meta name="format-detection" content="telephone=no" />
   <title>Date Planner</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -116,7 +119,14 @@
         <p class="meta">Melde dich an, damit eure Dates in der Cloud liegen und auf allen Handys gleich sind.</p>
         <form id="loginForm" class="login-form">
           <input type="email" id="loginEmail" placeholder="E-Mail-Adresse" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" required />
-          <button type="submit" class="ButtonFilter">Login-Link senden</button>
+          <button type="submit" class="ButtonFilter">Login-Mail senden</button>
+        </form>
+
+        <!-- Nach dem Senden: Code aus der Mail eintippen (nötig in der App vom Home-Bildschirm) -->
+        <form id="codeForm" class="login-form code-form hidden">
+          <p class="meta">Mail ist unterwegs. In der App vom Home-Bildschirm: den Link in der Mail nicht antippen, sondern gedrückt halten, „Link kopieren“ und hier einfügen.</p>
+          <input type="text" id="loginCode" placeholder="Link aus der Mail" autocapitalize="off" autocorrect="off" spellcheck="false" required />
+          <button type="submit" class="ButtonFilter">Anmelden</button>
         </form>
       </div>
 
@@ -438,6 +448,14 @@
   <script src="config.js"></script>
   <script src="cloud.js"></script>
   <script src="app.js"></script>
+  <script>
+    // Offline-Start: App-Dateien im Hintergrund vorhalten (siehe sw.js)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
+      });
+    }
+  </script>
 
 </body>
 
