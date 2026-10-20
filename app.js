@@ -27,11 +27,28 @@ let planConfig = {
 let currentSuggestions = [];
 let rejectedIds = [];
 
+// Date, das gerade im Formular bearbeitet wird (null = neues Date)
+let editingId = null;
+
+// Pause wurde im Formular von Hand gewählt → nicht mehr an die Größe koppeln
+let cooldownTouched = false;
+
 /* -------------------- KONSTANTEN -------------------- */
 
-const COOLDOWN_WEEKS = {
-    klein: 2,
-    groß: 4
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Standard-Pause in Tagen, wenn beim Date nichts eigenes eingestellt ist
+const DEFAULT_COOLDOWN_DAYS = {
+    klein: 14,
+    groß: 28
+};
+
+const COOLDOWN_LABELS = {
+    14: "2 Wochen",
+    28: "4 Wochen",
+    91: "3 Monate",
+    182: "6 Monate",
+    365: "1 Jahr"
 };
 
 const ENERGY_LEVELS = ["low", "medium", "high"];
@@ -67,7 +84,18 @@ function bindUI() {
         document.getElementById("datesContent").classList.toggle("hidden");
     };
 
-    document.getElementById("addDateForm").addEventListener("submit", addDate);
+    document.getElementById("addDateForm").addEventListener("submit", saveDateForm);
+    document.getElementById("cancelEditBtn").onclick = resetDateForm;
+
+    // Pause folgt der Größe, solange sie nicht von Hand gewählt wurde
+    document.querySelectorAll('input[name="size"]').forEach(radio => {
+        radio.addEventListener("change", () => {
+            if (!cooldownTouched) setCooldownRadio(DEFAULT_COOLDOWN_DAYS[radio.value]);
+        });
+    });
+    document.querySelectorAll('input[name="cooldown"]').forEach(radio => {
+        radio.addEventListener("change", () => { cooldownTouched = true; });
+    });
 
     // Filter der Date-Liste
     document.getElementById("filterSearch").addEventListener("input", e => {
@@ -247,13 +275,21 @@ function getAvailableDates(size) {
     );
 }
 
+// Eigene Pause des Dates, sonst der alte Standard nach Größe
+function getCooldownDays(date) {
+    return COOLDOWN_LABELS[date.cooldownDays]
+        ? date.cooldownDays
+        : DEFAULT_COOLDOWN_DAYS[date.size];
+}
+
+function getCooldownEnd(date) {
+    if (!date.lastUsed) return null;
+    return date.lastUsed + getCooldownDays(date) * DAY_MS;
+}
+
 function isOnCooldown(date) {
-    if (!date.lastUsed) return false;
-
-    const cooldown =
-        COOLDOWN_WEEKS[date.size] * 7 * 24 * 60 * 60 * 1000;
-
-    return Date.now() < date.lastUsed + cooldown;
+    const end = getCooldownEnd(date);
+    return end !== null && Date.now() < end;
 }
 
 // Prüft ein Date gegen die Planungs-Optionen
@@ -322,13 +358,13 @@ function pickWeighted(array, count) {
 
 /* -------------------- DATE MANAGEMENT -------------------- */
 
-function addDate(event) {
+// Formular speichert entweder ein neues oder das gerade bearbeitete Date
+function saveDateForm(event) {
     event.preventDefault();
 
     const input = document.getElementById("TitleInput");
 
-    const newDate = {
-        id: Date.now(),
+    const fields = {
         title: input.value,
         size: document.querySelector('input[name="size"]:checked').value,
         booking: document.getElementById("bookingCheckbox").checked,
@@ -336,15 +372,65 @@ function addDate(event) {
         energy: getSelectedEnergy() || "medium",
         season: document.querySelector('input[name="season"]:checked').value,
         weatherDependent: document.getElementById("weatherCheckbox").checked,
-        lastUsed: null
+        cooldownDays: Number(document.querySelector('input[name="cooldown"]:checked').value)
     };
 
-    dates.push(newDate);
-    saveDates();
-    renderDates();
+    const existing = dates.find(d => d.id === editingId);
 
-    input.value = "";
+    if (existing) {
+        Object.assign(existing, fields);
+    } else {
+        dates.push({ id: Date.now(), ...fields, lastUsed: null });
+    }
+
+    saveDates();
+    resetDateForm();
     input.blur();
+}
+
+// Lädt ein vorhandenes Date zum Bearbeiten ins Formular
+function editDate(date) {
+    editingId = date.id;
+    cooldownTouched = true;
+
+    document.getElementById("TitleInput").value = date.title;
+    document.querySelector(`input[name="size"][value="${date.size}"]`).checked = true;
+    document.getElementById("bookingCheckbox").checked = date.booking;
+    document.querySelectorAll('input[name="category"]').forEach(cb => {
+        cb.checked = date.categories.includes(cb.value);
+    });
+    document.querySelector(`input[name="energy"][value="${date.energy}"]`).checked = true;
+    document.querySelector(`input[name="season"][value="${date.season}"]`).checked = true;
+    document.getElementById("weatherCheckbox").checked = date.weatherDependent;
+    setCooldownRadio(getCooldownDays(date));
+
+    document.getElementById("formTitle").textContent = "Date bearbeiten";
+    document.getElementById("submitDateBtn").textContent = "Änderungen speichern";
+    document.getElementById("cancelEditBtn").classList.remove("hidden");
+
+    renderDates();
+    document.getElementById("addDateForm").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Zurück zum leeren Formular für ein neues Date
+function resetDateForm() {
+    editingId = null;
+    cooldownTouched = false;
+
+    const form = document.getElementById("addDateForm");
+    form.reset();
+    setCooldownRadio(DEFAULT_COOLDOWN_DAYS[document.querySelector('input[name="size"]:checked').value]);
+
+    document.getElementById("formTitle").textContent = "Date hinzufügen";
+    document.getElementById("submitDateBtn").textContent = "Hinzufügen";
+    document.getElementById("cancelEditBtn").classList.add("hidden");
+
+    renderDates();
+}
+
+function setCooldownRadio(days) {
+    const radio = document.querySelector(`input[name="cooldown"][value="${days}"]`);
+    if (radio) radio.checked = true;
 }
 
 function getSelectedCategories() {
@@ -362,7 +448,8 @@ function describeDate(date) {
     const parts = [
         date.size,
         date.energy,
-        SEASON_LABELS[date.season]
+        SEASON_LABELS[date.season],
+        `Pause ${COOLDOWN_LABELS[getCooldownDays(date)]}`
     ];
 
     if (date.weatherDependent) parts.push("wetterabhängig");
@@ -439,8 +526,20 @@ function renderDates() {
         meta.className = 'meta';
         meta.textContent = describeDate(date);
 
+        if (isOnCooldown(date)) {
+            const end = new Date(getCooldownEnd(date));
+            meta.textContent += ` • pausiert bis ${end.toLocaleDateString("de-DE")}`;
+        }
+
         left.appendChild(title);
         left.appendChild(meta);
+
+        if (date.id === editingId) li.classList.add("editing");
+
+        const edit = document.createElement("button");
+        edit.className = "ButtonEdit";
+        edit.textContent = "Bearbeiten";
+        edit.onclick = () => editDate(date);
 
         const del = document.createElement("button");
         del.className = "ButtonDelete";
@@ -449,10 +548,12 @@ function renderDates() {
             if (!confirm(`"${date.title}" wirklich löschen?`)) return;
             dates = dates.filter(d => d.id !== date.id);
             saveDates();
-            renderDates();
+            if (date.id === editingId) resetDateForm();
+            else renderDates();
         };
 
         li.appendChild(left);
+        li.appendChild(edit);
         li.appendChild(del);
         list.appendChild(li);
     });
@@ -488,6 +589,8 @@ function normalizeDate(d) {
         energy: ENERGY_LEVELS.includes(d.energy) ? d.energy : "medium",
         season: SEASON_LABELS[d.season] ? d.season : "ganzjährig",
         weatherDependent: Boolean(d.weatherDependent),
+        // Ohne eigene Pause gilt weiter der alte Standard nach Größe
+        cooldownDays: COOLDOWN_LABELS[d.cooldownDays] ? Number(d.cooldownDays) : null,
         lastUsed: d.lastUsed || null
     };
 }
@@ -502,7 +605,10 @@ function applyRemoteDates(remoteDates) {
     dates = remoteDates.map(normalizeDate);
     Cloud.setBaseline(dates);
     localStorage.setItem("dates", JSON.stringify(dates));
-    renderDates();
+
+    // Bearbeitetes Date wurde woanders gelöscht
+    if (editingId !== null && !dates.some(d => d.id === editingId)) resetDateForm();
+    else renderDates();
 }
 
 // Bittet den Browser, die Daten nicht automatisch zu löschen

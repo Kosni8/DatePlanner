@@ -222,7 +222,7 @@
 
         <!-- Date hinzufügen -->
         <form id="addDateForm">
-          <h3>Date hinzufügen</h3>
+          <h3 id="formTitle">Date hinzufügen</h3>
 
           <label>
             Name
@@ -313,9 +313,41 @@
             Wetterabhängig (nur bei gutem Wetter)
           </label>
 
+          <div class="options">
+            <strong>Pause nach dem Date</strong>
+            <span class="meta options-hint">So lange wird das Date nach einem bestätigten Plan nicht mehr vorgeschlagen.</span>
 
-          <button type="submit" class="ButtonBig">
+            <label>
+              <input type="radio" name="cooldown" value="14" checked>
+              2 Wochen
+            </label>
+
+            <label>
+              <input type="radio" name="cooldown" value="28">
+              4 Wochen
+            </label>
+
+            <label>
+              <input type="radio" name="cooldown" value="91">
+              3 Monate
+            </label>
+
+            <label>
+              <input type="radio" name="cooldown" value="182">
+              6 Monate
+            </label>
+
+            <label>
+              <input type="radio" name="cooldown" value="365">
+              1 Jahr
+            </label>
+          </div>
+
+          <button type="submit" id="submitDateBtn" class="ButtonBig">
             Hinzufügen
+          </button>
+          <button type="button" id="cancelEditBtn" class="ButtonFilter cancel-edit hidden">
+            Abbrechen
           </button>
         </form>
 
