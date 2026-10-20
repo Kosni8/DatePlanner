@@ -53,6 +53,9 @@ const COOLDOWN_LABELS = {
 
 const ENERGY_LEVELS = ["low", "medium", "high"];
 
+// Je Stern über/unter 3 wird ein Date 1,5-mal öfter/seltener vorgeschlagen
+const RATING_BASE = 1.5;
+
 const SEASON_LABELS = {
     sommer: "Sommer",
     winter: "Winter",
@@ -65,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadDates();
     requestPersistentStorage();
     renderDates();
+    renderHistory();
     renderSeasonHint();
     bindUI();
 
@@ -82,6 +86,10 @@ function bindUI() {
 
     document.getElementById("toggleDates").onclick = () => {
         document.getElementById("datesContent").classList.toggle("hidden");
+    };
+
+    document.getElementById("toggleHistory").onclick = () => {
+        document.getElementById("historyContent").classList.toggle("hidden");
     };
 
     document.getElementById("addDateForm").addEventListener("submit", saveDateForm);
@@ -240,7 +248,9 @@ function confirmPlan() {
 
     currentSuggestions.forEach(suggestion => {
         const real = dates.find(d => d.id === suggestion.id);
-        if (real) real.lastUsed = now;
+        if (!real) return;
+        real.lastUsed = now;
+        real.history.push({ at: now, rating: null, note: "" });
     });
 
     saveDates();
@@ -253,9 +263,10 @@ function confirmPlan() {
     document.getElementById("bigCount").value = "";
 
     renderDates();
+    renderHistory();
     updateConfirmButton();
 
-    alert("Dein Date-Plan wurde bestätigt!");
+    alert("Dein Date-Plan wurde bestätigt! Nach dem Date könnt ihr es unter „Verlauf“ bewerten.");
 }
 
 /* -------------------- CONFIRM BUTTON -------------------- */
@@ -328,12 +339,28 @@ function renderSeasonHint() {
     option.textContent = `Automatisch (gerade ${SEASON_LABELS[getCurrentSeason()]})`;
 }
 
-// Lange nicht gemachte Dates werden bevorzugt
+// Lange nicht gemachte und gut bewertete Dates werden bevorzugt
 function getWeight(date) {
+    return getRecencyWeight(date) * getRatingWeight(date);
+}
+
+function getRecencyWeight(date) {
     if (!date.lastUsed) return 3;
 
     const weeksSince = (Date.now() - date.lastUsed) / (7 * 24 * 60 * 60 * 1000);
     return Math.min(1 + weeksSince / 8, 3);
+}
+
+// Ohne Bewertung neutral (3 Sterne)
+function getRatingWeight(date) {
+    const avg = getAverageRating(date);
+    return avg === null ? 1 : Math.pow(RATING_BASE, avg - 3);
+}
+
+function getAverageRating(date) {
+    const ratings = date.history.map(h => h.rating).filter(Boolean);
+    if (ratings.length === 0) return null;
+    return ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
 }
 
 function pickWeighted(array, count) {
@@ -456,6 +483,11 @@ function describeDate(date) {
     if (date.booking) parts.push("buchen");
     if (date.categories.length) parts.push(date.categories.join(", "));
 
+    const avg = getAverageRating(date);
+    if (avg !== null) {
+        parts.push(`★ ${avg.toLocaleString("de-DE", { maximumFractionDigits: 1 })}`);
+    }
+
     return parts.join(" • ");
 }
 
@@ -548,6 +580,7 @@ function renderDates() {
             if (!confirm(`"${date.title}" wirklich löschen?`)) return;
             dates = dates.filter(d => d.id !== date.id);
             saveDates();
+            renderHistory();
             if (date.id === editingId) resetDateForm();
             else renderDates();
         };
@@ -555,6 +588,137 @@ function renderDates() {
         li.appendChild(left);
         li.appendChild(edit);
         li.appendChild(del);
+        list.appendChild(li);
+    });
+}
+
+/* -------------------- VERLAUF -------------------- */
+
+// Alle bestätigten Dates, neueste zuerst
+function getHistoryEntries() {
+    return dates
+        .flatMap(date => date.history.map(entry => ({ date, entry })))
+        .sort((a, b) => b.entry.at - a.entry.at);
+}
+
+function findHistoryEntry(dateId, at) {
+    const date = dates.find(d => d.id === dateId);
+    const entry = date && date.history.find(h => h.at === at);
+    return entry ? { date, entry } : null;
+}
+
+function setRating(dateId, at, rating) {
+    const found = findHistoryEntry(dateId, at);
+    if (!found) return;
+
+    // Gleichen Stern nochmal antippen nimmt die Bewertung zurück
+    found.entry.rating = found.entry.rating === rating ? null : rating;
+    saveDates();
+    renderHistory();
+    renderDates();
+}
+
+function setNote(dateId, at, note) {
+    const found = findHistoryEntry(dateId, at);
+    if (!found) return;
+
+    found.entry.note = note.trim();
+    saveDates();
+}
+
+// Date hat doch nicht stattgefunden → Eintrag weg, Pause richtet sich nach dem vorherigen
+function removeHistoryEntry(dateId, at) {
+    const found = findHistoryEntry(dateId, at);
+    if (!found) return;
+    if (!confirm(`„${found.date.title}“ aus dem Verlauf entfernen? Das Date wird dann wieder früher vorgeschlagen.`)) return;
+
+    const date = found.date;
+    date.history = date.history.filter(h => h !== found.entry);
+    date.lastUsed = date.history.reduce((latest, h) => Math.max(latest, h.at), 0) || null;
+
+    saveDates();
+    renderHistory();
+    renderDates();
+}
+
+function renderHistory() {
+    const list = document.getElementById("historyList");
+    const toggle = document.getElementById("toggleHistory");
+    const entries = getHistoryEntries();
+    const open = entries.filter(e => !e.entry.rating).length;
+
+    toggle.textContent = open > 0
+        ? `Verlauf (${open} zu bewerten) ▼`
+        : "Verlauf ▼";
+
+    list.innerHTML = "";
+
+    if (entries.length === 0) {
+        list.innerHTML = '<li class="meta">Noch keine Dates gemacht. Bestätigte Pläne erscheinen hier.</li>';
+        return;
+    }
+
+    entries.forEach(({ date, entry }) => {
+        const li = document.createElement("li");
+        if (!entry.rating) li.classList.add("unrated");
+
+        const head = document.createElement("div");
+        head.className = "history-head";
+
+        const title = document.createElement("div");
+        title.className = "history-title";
+        title.textContent = date.title;
+
+        const when = document.createElement("span");
+        when.className = "meta";
+        when.textContent = new Date(entry.at).toLocaleDateString("de-DE");
+
+        head.appendChild(title);
+        head.appendChild(when);
+
+        const stars = document.createElement("div");
+        stars.className = "stars";
+        stars.setAttribute("role", "group");
+        stars.setAttribute("aria-label", "Bewertung");
+
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElement("button");
+            star.type = "button";
+            star.className = "star";
+            star.textContent = i <= (entry.rating || 0) ? "★" : "☆";
+            star.setAttribute("aria-label", `${i} von 5 Sternen`);
+            star.setAttribute("aria-pressed", String(entry.rating === i));
+            if (i <= (entry.rating || 0)) star.classList.add("filled");
+            star.onclick = () => setRating(date.id, entry.at, i);
+            stars.appendChild(star);
+        }
+
+        const footer = document.createElement("div");
+        footer.className = "history-footer";
+
+        const note = document.createElement("input");
+        note.type = "text";
+        note.placeholder = "Notiz (optional)";
+        note.value = entry.note;
+        note.setAttribute("enterkeyhint", "done");
+        note.addEventListener("change", () => setNote(date.id, entry.at, note.value));
+        note.addEventListener("keydown", e => {
+            if (e.key === "Enter") note.blur();
+        });
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "ButtonDelete";
+        remove.textContent = "X";
+        remove.setAttribute("aria-label", "Aus dem Verlauf entfernen");
+        remove.onclick = () => removeHistoryEntry(date.id, entry.at);
+
+        footer.appendChild(note);
+        footer.appendChild(remove);
+
+        li.appendChild(head);
+        li.appendChild(stars);
+        li.appendChild(footer);
         list.appendChild(li);
     });
 }
@@ -591,8 +755,24 @@ function normalizeDate(d) {
         weatherDependent: Boolean(d.weatherDependent),
         // Ohne eigene Pause gilt weiter der alte Standard nach Größe
         cooldownDays: COOLDOWN_LABELS[d.cooldownDays] ? Number(d.cooldownDays) : null,
-        lastUsed: d.lastUsed || null
+        lastUsed: d.lastUsed || null,
+        history: normalizeHistory(d)
     };
+}
+
+// Ältere Dates ohne Verlauf bekommen ihren letzten bestätigten Plan als Eintrag
+function normalizeHistory(d) {
+    if (!Array.isArray(d.history)) {
+        return d.lastUsed ? [{ at: d.lastUsed, rating: null, note: "" }] : [];
+    }
+
+    return d.history
+        .filter(h => h && Number.isFinite(h.at))
+        .map(h => ({
+            at: h.at,
+            rating: Number.isInteger(h.rating) && h.rating >= 1 && h.rating <= 5 ? h.rating : null,
+            note: typeof h.note === "string" ? h.note : ""
+        }));
 }
 
 function saveDates() {
@@ -605,6 +785,8 @@ function applyRemoteDates(remoteDates) {
     dates = remoteDates.map(normalizeDate);
     Cloud.setBaseline(dates);
     localStorage.setItem("dates", JSON.stringify(dates));
+
+    renderHistory();
 
     // Bearbeitetes Date wurde woanders gelöscht
     if (editingId !== null && !dates.some(d => d.id === editingId)) resetDateForm();
@@ -652,6 +834,7 @@ function importDates(event) {
 
             saveDates();
             renderDates();
+            renderHistory();
             alert(`${imported.length} Dates importiert.`);
         } catch {
             alert("Die Datei konnte nicht gelesen werden.");
