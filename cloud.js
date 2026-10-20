@@ -249,11 +249,30 @@ const Cloud = (() => {
         if (error) throw error;
     }
 
-    // Code aus der Mail statt Link: so klappt die Anmeldung auch in der
-    // App vom Home-Bildschirm, die auf dem iPhone getrennt von Safari ist
-    async function verifyLoginCode(email, token) {
-        const { error } = await client.auth.verifyOtp({ email, token, type: "email" });
-        if (error) throw error;
+    // Kopierter Link (oder Code) aus der Mail: so klappt die Anmeldung auch
+    // in der App vom Home-Bildschirm, die auf dem iPhone getrennt von Safari ist
+    async function verifyLoginCode(email, input) {
+        let result;
+
+        if (/^\d+$/.test(input)) {
+            result = await client.auth.verifyOtp({ email, token: input, type: "email" });
+        } else {
+            let params;
+            try {
+                params = new URL(input).searchParams;
+            } catch {
+                throw new Error("Das ist kein Link aus der Login-Mail.");
+            }
+            const tokenHash = params.get("token");
+            if (!tokenHash) throw new Error("Im Link fehlt der Anmelde-Schlüssel.");
+
+            result = await client.auth.verifyOtp({
+                token_hash: tokenHash,
+                type: params.get("type") || "email"
+            });
+        }
+
+        if (result.error) throw result.error;
     }
 
     async function signOut() {

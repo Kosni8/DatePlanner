@@ -448,10 +448,6 @@ select {
     margin: 0;
 }
 
-#loginCode:not(:placeholder-shown) {
-    letter-spacing: 0.2em;
-}
-
 /* Angemeldet: schmale Leiste mit Sync-Status */
 #accountSection.compact {
     padding: 4px 8px;

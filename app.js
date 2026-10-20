@@ -695,7 +695,7 @@ async function verifyLoginCode(event) {
         input.value = "";
         document.getElementById("codeForm").classList.add("hidden");
     } catch (err) {
-        alert(`Code passt nicht oder ist abgelaufen: ${err.message}`);
+        alert(`Anmeldung hat nicht geklappt. Der Link gilt nur einmal und nur eine Stunde, schick dir sonst eine neue Mail.\n\n${err.message}`);
     }
 
     button.disabled = false;
