@@ -125,6 +125,7 @@ function bindUI() {
 
     // Konto
     document.getElementById("loginForm").addEventListener("submit", sendLoginLink);
+    document.getElementById("codeForm").addEventListener("submit", verifyLoginCode);
     document.getElementById("logoutBtn").onclick = () => Cloud.signOut();
     document.getElementById("accountToggle").onclick = () => {
         setAccountExpanded(document.getElementById("accountDetails").classList.contains("hidden"));
@@ -673,10 +674,28 @@ async function sendLoginLink(event) {
 
     try {
         await Cloud.sendLoginLink(input.value.trim());
-        alert("Login-Link verschickt. Öffne die Mail auf dem Gerät, auf dem du die App nutzen willst.");
-        input.value = "";
+        document.getElementById("codeForm").classList.remove("hidden");
+        document.getElementById("loginCode").focus();
     } catch (err) {
-        alert(`Login-Link konnte nicht verschickt werden: ${err.message}`);
+        alert(`Login-Mail konnte nicht verschickt werden: ${err.message}`);
+    }
+
+    button.disabled = false;
+}
+
+async function verifyLoginCode(event) {
+    event.preventDefault();
+
+    const input = document.getElementById("loginCode");
+    const button = event.target.querySelector("button");
+    button.disabled = true;
+
+    try {
+        await Cloud.verifyLoginCode(document.getElementById("loginEmail").value.trim(), input.value.trim());
+        input.value = "";
+        document.getElementById("codeForm").classList.add("hidden");
+    } catch (err) {
+        alert(`Code passt nicht oder ist abgelaufen: ${err.message}`);
     }
 
     button.disabled = false;

@@ -249,6 +249,13 @@ const Cloud = (() => {
         if (error) throw error;
     }
 
+    // Code aus der Mail statt Link: so klappt die Anmeldung auch in der
+    // App vom Home-Bildschirm, die auf dem iPhone getrennt von Safari ist
+    async function verifyLoginCode(email, token) {
+        const { error } = await client.auth.verifyOtp({ email, token, type: "email" });
+        if (error) throw error;
+    }
+
     async function signOut() {
         await client.auth.signOut();
     }
@@ -280,5 +287,5 @@ const Cloud = (() => {
         localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
     }
 
-    return { init, setBaseline, track, sync, sendLoginLink, signOut, getState };
+    return { init, setBaseline, track, sync, sendLoginLink, verifyLoginCode, signOut, getState };
 })();
