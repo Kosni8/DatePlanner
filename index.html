@@ -103,6 +103,9 @@
   <meta name="apple-mobile-web-app-title" content="Date Planner" />
   <meta name="format-detection" content="telephone=no" />
   <title>Date Planner</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -426,6 +429,14 @@
   <script src="config.js"></script>
   <script src="cloud.js"></script>
   <script src="app.js"></script>
+  <script>
+    // Offline-Start: App-Dateien im Hintergrund vorhalten (siehe sw.js)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
+      });
+    }
+  </script>
 
 </body>
 
