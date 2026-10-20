@@ -518,3 +518,75 @@ select {
 input[type="search"]::-webkit-search-decoration {
     -webkit-appearance: none;
 }
+
+/* ---------- VERLAUF ---------- */
+
+#historyContent {
+    margin-top: 16px;
+}
+
+#historyContent > .meta {
+    margin-top: 0;
+}
+
+#historyList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#historyList li {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+#historyList li:last-child {
+    border-bottom: none;
+}
+
+.history-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.history-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+#historyList li.unrated .history-title {
+    font-weight: 600;
+}
+
+.stars {
+    display: flex;
+    margin: 2px 0 4px -6px;
+}
+
+.star {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #c7c7cc;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.star.filled {
+    color: #ff9f0a;
+}
+
+.history-footer {
+    display: flex;
+    align-items: center;
+}
+
+.history-footer input {
+    flex: 1;
+    min-width: 0;
+}
